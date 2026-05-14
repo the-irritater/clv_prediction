@@ -54,43 +54,43 @@ def explain_model(model, X_train, X_test, feature_names,
     shap_values = explainer(X_explain)
 
     # 1. Global - Beeswarm plot
-    fig, ax = plt.subplots(figsize=(12, 8))
     shap.plots.beeswarm(shap_values, max_display=15, show=False)
     fig = plt.gcf()
+    fig.set_size_inches(12, 8)
     fig.suptitle("SHAP Beeswarm - Global Feature Impact", fontsize=14, fontweight="bold")
     _save_fig(fig, "14_shap_beeswarm", output_dir)
 
     # 2. Global - Bar plot (mean |SHAP|)
-    fig, ax = plt.subplots(figsize=(10, 7))
     shap.plots.bar(shap_values, max_display=15, show=False)
     fig = plt.gcf()
+    fig.set_size_inches(10, 7)
     fig.suptitle("SHAP Feature Importance (Mean |SHAP|)", fontsize=14, fontweight="bold")
     _save_fig(fig, "15_shap_importance", output_dir)
 
     # 3. Local - Waterfall for highest CLV prediction
     predictions = model.predict(X_explain)
     high_idx = int(np.argmax(predictions))
-    fig, ax = plt.subplots(figsize=(12, 7))
     shap.plots.waterfall(shap_values[high_idx], max_display=12, show=False)
     fig = plt.gcf()
+    fig.set_size_inches(12, 7)
     fig.suptitle(f"SHAP Waterfall - High CLV Customer (Pred: ${predictions[high_idx]:,.0f})",
                  fontsize=13, fontweight="bold")
     _save_fig(fig, "16_shap_waterfall_high", output_dir)
 
     # 4. Local - Waterfall for lowest CLV prediction
     low_idx = int(np.argmin(predictions))
-    fig, ax = plt.subplots(figsize=(12, 7))
     shap.plots.waterfall(shap_values[low_idx], max_display=12, show=False)
     fig = plt.gcf()
+    fig.set_size_inches(12, 7)
     fig.suptitle(f"SHAP Waterfall - Low CLV Customer (Pred: ${predictions[low_idx]:,.0f})",
                  fontsize=13, fontweight="bold")
     _save_fig(fig, "17_shap_waterfall_low", output_dir)
 
     # 5. Dependence plot for top feature
     top_feature_idx = int(np.argmax(np.abs(shap_values.values).mean(axis=0)))
-    fig, ax = plt.subplots(figsize=(10, 6))
     shap.plots.scatter(shap_values[:, top_feature_idx], show=False)
     fig = plt.gcf()
+    fig.set_size_inches(10, 6)
     fig.suptitle(f"SHAP Dependence - {feature_names[top_feature_idx]}",
                  fontsize=14, fontweight="bold")
     _save_fig(fig, "18_shap_dependence", output_dir)
