@@ -29,7 +29,7 @@ def _save_fig(fig, name, output_dir):
 
 
 def explain_model(model, X_train, X_test, feature_names,
-                  output_dir="reports/figures", model_type="tree"):
+                  output_dir="reports/figures", model_type="auto"):
     """Generate SHAP explanations for the best model."""
     os.makedirs(output_dir, exist_ok=True)
     print("\n[INFO] Generating SHAP Explanations...")
@@ -39,9 +39,16 @@ def explain_model(model, X_train, X_test, feature_names,
     X_bg = X_train[:n_sample]
     X_explain = X_test[:min(1000, X_test.shape[0])]
 
-    if model_type == "tree":
+    # Auto-detect model type for correct SHAP explainer
+    tree_types = ("XGBRegressor", "LGBMRegressor", "RandomForestRegressor",
+                  "GradientBoostingRegressor", "XGBClassifier", "LGBMClassifier")
+    is_tree = model_type == "tree" or type(model).__name__ in tree_types
+
+    if is_tree:
+        print(f"   Using TreeExplainer for {type(model).__name__}")
         explainer = shap.TreeExplainer(model, data=X_bg, feature_names=feature_names)
     else:
+        print(f"   Using generic Explainer for {type(model).__name__}")
         explainer = shap.Explainer(model, X_bg, feature_names=feature_names)
 
     shap_values = explainer(X_explain)

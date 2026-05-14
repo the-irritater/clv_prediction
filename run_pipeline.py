@@ -63,7 +63,7 @@ def main():
     print("\n[STEP 6/7] SHAP Explainability")
     X_train, X_test, y_train, y_test = splits
     explain_model(best_model, X_train, X_test, feature_cols,
-                  os.path.join(reports_dir, "figures"), model_type="tree")
+                  os.path.join(reports_dir, "figures"), model_type="auto")
 
     # -- Step 7: Monitoring Strategy -------------------------------------------
     print("\n[STEP 7/7] Monitoring Strategy")
