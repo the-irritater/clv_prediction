@@ -14,8 +14,8 @@ A production-grade, end-to-end Machine Learning pipeline and interactive dashboa
 
 | Name | Role |
 |------|------|
-| **Sanman** | Lead Developer |
-| **Varsha** | Co-Developer |
+| **Sanman** | Data Analyst |
+| **Varsha** | Data Analyst |
 
 ---
 
