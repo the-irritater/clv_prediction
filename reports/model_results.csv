@@ -1,0 +1,5 @@
+Model,RMSE,MAE,MAPE (%),R²
+Ridge (Baseline),464.58,115.05,220.4,0.8336
+Random Forest,524.25,78.58,116.5,0.7882
+XGBoost (Tuned),375.56,76.23,114.91,0.8913
+LightGBM (Tuned),858.43,97.43,114.42,0.432

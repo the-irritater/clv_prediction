@@ -1,7 +1,10 @@
 """
 CLV Prediction Dashboard
 =========================
-Streamlit multi-tab dashboard with Overview, EDA, Segments, Predictions, and Model Performance.
+Streamlit multi-tab dashboard with Overview, EDA, Segments, Predictions,
+and Model Performance.
+
+Authors: Sanman, Varsha
 """
 
 import os, sys
@@ -13,15 +16,15 @@ import streamlit as st
 import joblib
 import shap
 
-# ── Path setup ────────────────────────────────────────────────────────────────
+# -- Path setup ----------------------------------------------------------------
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-# ── Page config ───────────────────────────────────────────────────────────────
-st.set_page_config(page_title="CLV Prediction", page_icon="💎", layout="wide",
-                   initial_sidebar_state="expanded")
+# -- Page config ---------------------------------------------------------------
+st.set_page_config(page_title="CLV Prediction", page_icon="chart_with_upwards_trend",
+                   layout="wide", initial_sidebar_state="expanded")
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
+# -- Custom CSS ----------------------------------------------------------------
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -62,9 +65,9 @@ def load_data():
 
 @st.cache_resource
 def load_models():
-    model_dir = os.path.join(ROOT, "outputs", "models")
+    model_dir = os.path.join(ROOT, "models")
     models = {}
-    for name in ["ridge", "random_forest", "xgboost", "lightgbm"]:
+    for name in ["ridge", "random_forest", "xgboost", "lightgbm", "bgnbd", "gamma_gamma"]:
         path = os.path.join(model_dir, f"{name}.joblib")
         if os.path.exists(path):
             models[name] = joblib.load(path)
@@ -82,32 +85,34 @@ def plotly_dark_layout(fig, title=""):
     return fig
 
 
-# ── Load data ─────────────────────────────────────────────────────────────────
+# -- Load data -----------------------------------------------------------------
 try:
     customers, transactions, features = load_data()
     models, feature_cols = load_models()
     data_loaded = True
 except Exception as e:
     data_loaded = False
-    st.error(f"⚠️ Run `python run_pipeline.py` first to generate data and models.\n\nError: {e}")
+    st.error(f"Run `python run_pipeline.py` first to generate data and models.\n\nError: {e}")
     st.stop()
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# -- Sidebar -------------------------------------------------------------------
 with st.sidebar:
-    st.markdown('<p class="gradient-text">💎 CLV Prediction</p>', unsafe_allow_html=True)
+    st.markdown('<p class="gradient-text">CLV Prediction</p>', unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("**Customer Lifetime Value** prediction system with segmentation & explainability.")
     st.markdown("---")
-    st.markdown(f"👥 **{len(customers):,}** customers")
-    st.markdown(f"🧾 **{len(transactions):,}** transactions")
-    st.markdown(f"📊 **{len(feature_cols)}** features")
-    st.markdown(f"🤖 **{len(models)}** models trained")
+    st.markdown("**Authors:** Sanman, Varsha")
+    st.markdown("---")
+    st.markdown(f"**{len(customers):,}** customers")
+    st.markdown(f"**{len(transactions):,}** transactions")
+    st.markdown(f"**{len(feature_cols)}** features")
+    st.markdown(f"**{len(models)}** models trained")
 
-# ── Tabs ──────────────────────────────────────────────────────────────────────
+# -- Tabs ----------------------------------------------------------------------
 tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["📊 Overview", "🔍 EDA", "🎯 Segments", "🔮 Predictions", "🏆 Model Performance"])
+    ["Overview", "EDA", "Segments", "Predictions", "Model Performance"])
 
-# ═══════════════════════════════ TAB 1: OVERVIEW ══════════════════════════════
+# ========================== TAB 1: OVERVIEW ===================================
 with tab1:
     st.markdown("## Business Overview")
     col1, col2, col3, col4 = st.columns(4)
@@ -116,9 +121,14 @@ with tab1:
     churn_rate = features["is_churned"].mean() * 100 if "is_churned" in features.columns else 0
     col1.metric("Total Customers", f"{len(features):,}")
     col2.metric("Total Revenue", f"${total_rev:,.0f}")
-    col3.metric("Avg CLV", f"${avg_clv:,.0f}")
+    col3.metric("Avg 6M CLV", f"${avg_clv:,.0f}")
     col4.metric("Churn Rate", f"{churn_rate:.1f}%")
 
+    st.markdown("---")
+    st.markdown("### Actionable Business Insights")
+    st.info("**High-Value Cohorts:** The 'Champions' segment represents a disproportionate amount of future revenue. Prioritize retention budgets for this tier.")
+    st.warning("**Churn Prevention:** Customers who cross the 90-day inactivity threshold rarely return. Deploy automated win-back campaigns at day 60.")
+    st.success("**Channel Optimization:** Certain acquisition channels yield higher lifetime values. Reallocate CAC (Customer Acquisition Cost) to the top-performing channels.")
     st.markdown("---")
     c1, c2 = st.columns(2)
     with c1:
@@ -129,11 +139,11 @@ with tab1:
         st.plotly_chart(plotly_dark_layout(fig, "Monthly Revenue Trend"), use_container_width=True)
     with c2:
         top10 = features.nlargest(10, "clv")[["customer_id", "clv", "frequency", "recency"]]
-        fig = px.bar(top10, x="customer_id", y="clv", title="Top 10 Customers by CLV",
+        fig = px.bar(top10, x="customer_id", y="clv", title="Top 10 Customers by 6M CLV",
                      color="clv", color_continuous_scale=["#6C63FF", "#FF6584"])
-        st.plotly_chart(plotly_dark_layout(fig, "Top 10 Customers by CLV"), use_container_width=True)
+        st.plotly_chart(plotly_dark_layout(fig, "Top 10 Customers by 6M CLV"), use_container_width=True)
 
-# ═══════════════════════════════ TAB 2: EDA ═══════════════════════════════════
+# ========================== TAB 2: EDA ========================================
 with tab2:
     st.markdown("## Exploratory Data Analysis")
     c1, c2 = st.columns(2)
@@ -162,7 +172,7 @@ with tab2:
             fig = px.bar(ch_rev, x="acquisition_channel", y="clv", color_discrete_sequence=[COLORS[4]])
             st.plotly_chart(plotly_dark_layout(fig, "Avg CLV by Channel"), use_container_width=True)
 
-# ═══════════════════════════════ TAB 3: SEGMENTS ══════════════════════════════
+# ========================== TAB 3: SEGMENTS ===================================
 with tab3:
     st.markdown("## Customer Segments")
     if "segment" in features.columns:
@@ -207,13 +217,14 @@ with tab3:
     else:
         st.warning("No segment data found. Run the pipeline first.")
 
-# ═══════════════════════════════ TAB 4: PREDICTIONS ═══════════════════════════
+# ========================== TAB 4: PREDICTIONS ================================
 with tab4:
     st.markdown("## CLV Predictor")
-    best_key = "xgboost" if "xgboost" in models else list(models.keys())[-1]
-    best_model = models[best_key]
+    ml_models = {k: v for k, v in models.items() if k not in ["bgnbd", "gamma_gamma"]}
+    best_key = "xgboost" if "xgboost" in ml_models else list(ml_models.keys())[-1]
+    best_model = ml_models[best_key]
 
-    st.markdown(f"**Active model:** `{best_key}` | **Features:** {len(feature_cols)}")
+    st.markdown(f"**Active model (ML):** `{best_key}` | **Features:** {len(feature_cols)}")
     st.markdown("---")
 
     st.markdown("### Single Customer Prediction")
@@ -227,8 +238,8 @@ with tab4:
             actual = cust_row["clv"].values[0]
 
             c1, c2, c3 = st.columns(3)
-            c1.metric("Predicted CLV", f"${pred:,.0f}")
-            c2.metric("Actual CLV", f"${actual:,.0f}")
+            c1.metric("Predicted 6M CLV", f"${pred:,.0f}")
+            c2.metric("Actual 6M CLV", f"${actual:,.0f}")
             c3.metric("Error", f"${abs(pred - actual):,.0f}")
 
             seg = cust_row["segment"].values[0] if "segment" in cust_row.columns else "N/A"
@@ -252,21 +263,22 @@ with tab4:
         st.plotly_chart(plotly_dark_layout(fig, f"{months_ahead}-Month Revenue Forecast by Segment"),
                         use_container_width=True)
 
-# ═══════════════════════════════ TAB 5: MODEL PERF ════════════════════════════
+# ========================== TAB 5: MODEL PERF =================================
 with tab5:
     st.markdown("## Model Performance")
-    results_path = os.path.join(ROOT, "outputs", "model_results.csv")
+    results_path = os.path.join(ROOT, "reports", "model_results.csv")
     if os.path.exists(results_path):
         results_df = pd.read_csv(results_path)
-        st.dataframe(results_df.style.highlight_max(subset=["R²"], color="#43E97B")
+        r2_col = "R2" if "R2" in results_df.columns else "R\u00b2"
+        st.dataframe(results_df.style.highlight_max(subset=[r2_col], color="#43E97B")
                      .highlight_min(subset=["RMSE", "MAE"], color="#43E97B"),
                      use_container_width=True)
 
         c1, c2 = st.columns(2)
         with c1:
-            fig = px.bar(results_df, x="Model", y="R²", color="Model",
+            fig = px.bar(results_df, x="Model", y=r2_col, color="Model",
                          color_discrete_sequence=COLORS)
-            st.plotly_chart(plotly_dark_layout(fig, "R² Score Comparison"), use_container_width=True)
+            st.plotly_chart(plotly_dark_layout(fig, "R2 Score Comparison"), use_container_width=True)
         with c2:
             fig = px.bar(results_df, x="Model", y="RMSE", color="Model",
                          color_discrete_sequence=COLORS)
@@ -276,7 +288,7 @@ with tab5:
 
     # Show saved figures
     st.markdown("### Visualizations")
-    fig_dir = os.path.join(ROOT, "outputs", "figures")
+    fig_dir = os.path.join(ROOT, "reports", "figures")
     if os.path.isdir(fig_dir):
         figs = sorted([f for f in os.listdir(fig_dir) if f.endswith(".png")])
         selected = st.selectbox("Select plot", figs)

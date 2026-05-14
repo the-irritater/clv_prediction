@@ -5,9 +5,11 @@ Generates realistic customer + transaction data for CLV modeling.
 
 Key realism features:
 - Pareto-distributed spending (few whales, many low-spenders)
-- Seasonal purchase patterns (holiday spikes in Nov–Dec)
+- Seasonal purchase patterns (holiday spikes in Nov-Dec)
 - Realistic churn (~30% inactive after 6 months)
-- Correlated features (age ↔ category, channel ↔ CLV)
+- Correlated features (age <-> category, channel <-> CLV)
+
+Authors: Sanman, Varsha
 """
 
 import os
@@ -15,7 +17,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 
-# ── Configuration ──────────────────────────────────────────────────────────────
+# -- Configuration -------------------------------------------------------------
 SEED = 42
 N_CUSTOMERS = 50_000
 DATE_START = "2021-01-01"
@@ -58,7 +60,6 @@ def generate_customers(n: int = N_CUSTOMERS, seed: int = SEED) -> pd.DataFrame:
     channels = rng.choice(CHANNELS, size=n, p=CHANNEL_WEIGHTS)
 
     # Base propensity (Pareto-like): determines how much a customer spends
-    # Higher propensity → higher CLV (whale behavior)
     propensity = rng.pareto(a=2.5, size=n) + 0.1
 
     # Channel influences propensity: referrals have higher value
@@ -75,7 +76,7 @@ def generate_customers(n: int = N_CUSTOMERS, seed: int = SEED) -> pd.DataFrame:
         "gender": genders,
         "region": regions,
         "acquisition_channel": channels,
-        "propensity": propensity,  # internal — used for transaction generation
+        "propensity": propensity,
     })
     return df
 
@@ -94,15 +95,11 @@ def generate_transactions(customers: pd.DataFrame, seed: int = SEED) -> pd.DataF
         prop = cust["propensity"]
         age = cust["age"]
 
-        # Number of transactions scales with propensity
-        # Mean ~10 transactions, whales can have 50+
         n_txns = max(1, int(rng.poisson(lam=prop * 4)))
 
-        # Churn probability — ~30% of customers become inactive
         churn_prob = 0.30 if prop < 0.5 else 0.10
         churned = rng.random() < churn_prob
         if churned:
-            # Churned customers only have transactions in the first 30–180 days
             active_window = int(rng.integers(30, 180))
             churn_date = min(signup + timedelta(days=active_window), end_date)
         else:
@@ -113,21 +110,17 @@ def generate_transactions(customers: pd.DataFrame, seed: int = SEED) -> pd.DataF
             available_days = 1
 
         for _ in range(n_txns):
-            # Transaction date — weighted toward seasonal peaks
             day_offset = int(rng.integers(0, available_days))
             txn_date = signup + timedelta(days=day_offset)
             month = txn_date.month
 
-            # Seasonal gating: skip some transactions in low-season months
             if rng.random() > _seasonal_multiplier(month) * 0.75:
                 continue
 
-            # Amount: log-normal distribution scaled by propensity
             base_amount = rng.lognormal(mean=3.5, sigma=0.8)
             amount = round(base_amount * (0.5 + prop * 0.5), 2)
-            amount = max(5.0, min(amount, 5000.0))  # clip extremes
+            amount = max(5.0, min(amount, 5000.0))
 
-            # Category — age-correlated preferences
             if age < 25:
                 cat_weights = [0.30, 0.25, 0.05, 0.10, 0.15, 0.10, 0.05]
             elif age < 40:
@@ -165,16 +158,16 @@ def generate_and_save(output_dir: str = "data/raw") -> tuple[pd.DataFrame, pd.Da
     """Generate datasets and save to CSV."""
     os.makedirs(output_dir, exist_ok=True)
 
-    print("🔧 Generating customers...")
+    print("[INFO] Generating customers...")
     customers = generate_customers()
     customers_public = customers.drop(columns=["propensity"])
     customers_public.to_csv(os.path.join(output_dir, "customers.csv"), index=False)
-    print(f"   ✅ {len(customers_public):,} customers saved")
+    print(f"   [OK] {len(customers_public):,} customers saved")
 
-    print("🔧 Generating transactions...")
+    print("[INFO] Generating transactions...")
     transactions = generate_transactions(customers)
     transactions.to_csv(os.path.join(output_dir, "transactions.csv"), index=False)
-    print(f"   ✅ {len(transactions):,} transactions saved")
+    print(f"   [OK] {len(transactions):,} transactions saved")
 
     return customers_public, transactions
 

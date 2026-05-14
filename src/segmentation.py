@@ -2,6 +2,8 @@
 Customer Segmentation
 ======================
 K-Means clustering on RFM features to create actionable customer segments.
+
+Authors: Sanman, Varsha
 """
 
 import os
@@ -33,7 +35,7 @@ def _save_fig(fig, name, output_dir):
     fig.savefig(os.path.join(output_dir, f"{name}.png"), dpi=150,
                 bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
-    print(f"   📊 Saved {name}.png")
+    print(f"   [SAVED] {name}.png")
 
 
 def find_optimal_k(rfm_scaled, k_range=range(3, 8)):
@@ -43,14 +45,14 @@ def find_optimal_k(rfm_scaled, k_range=range(3, 8)):
         labels = km.fit_predict(rfm_scaled)
         scores[k] = silhouette_score(rfm_scaled, labels, sample_size=min(10000, len(rfm_scaled)))
     best_k = max(scores, key=scores.get)
-    print(f"   🔍 Silhouette scores: {', '.join(f'k={k}: {v:.3f}' for k, v in scores.items())}")
-    print(f"   ✅ Optimal k = {best_k}")
+    print(f"   [SEARCH] Silhouette scores: {', '.join(f'k={k}: {v:.3f}' for k, v in scores.items())}")
+    print(f"   [OK] Optimal k = {best_k}")
     return best_k
 
 
-def segment_customers(features, output_dir="outputs/figures"):
+def segment_customers(features, output_dir="reports/figures"):
     os.makedirs(output_dir, exist_ok=True)
-    print("\n🎯 Running Customer Segmentation...")
+    print("\n[INFO] Running Customer Segmentation...")
 
     rfm_cols = ["recency", "frequency", "monetary"]
     rfm_data = features[rfm_cols].copy()
@@ -74,7 +76,7 @@ def segment_customers(features, output_dir="outputs/figures"):
         count=("customer_id", "count"), avg_clv=("clv", "mean"),
         avg_recency=("recency", "mean"), avg_frequency=("frequency", "mean"),
     ).round(1)
-    print(f"\n📋 Segment Summary:\n{summary.to_string()}")
+    print(f"\n[SUMMARY] Segment Summary:\n{summary.to_string()}")
 
     # Plot segment distribution
     seg_counts = features["segment"].value_counts()
@@ -125,5 +127,5 @@ def segment_customers(features, output_dir="outputs/figures"):
     ax.tick_params(axis="x", rotation=15)
     _save_fig(fig, "11_segment_clv_boxplot", output_dir)
 
-    print(f"\n✅ Segmentation complete — {best_k} segments")
+    print(f"\n[OK] Segmentation complete - {best_k} segments")
     return features

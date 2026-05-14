@@ -2,7 +2,9 @@
 Exploratory Data Analysis
 ==========================
 Generates publication-quality EDA plots and data quality reports.
-All plots are saved to outputs/figures/.
+All plots are saved to reports/figures/.
+
+Authors: Sanman, Varsha
 """
 
 import os
@@ -13,7 +15,7 @@ import matplotlib.ticker as mticker
 import seaborn as sns
 from scipy import stats
 
-# ── Style configuration ───────────────────────────────────────────────────────
+# -- Style configuration -------------------------------------------------------
 plt.rcParams.update({
     "figure.facecolor": "#0e1117",
     "axes.facecolor": "#1a1d23",
@@ -30,7 +32,7 @@ plt.rcParams.update({
     "axes.titleweight": "bold",
 })
 
-# Curated color palette — vibrant but harmonious
+# Curated color palette
 PALETTE = ["#6C63FF", "#FF6584", "#43E97B", "#FFD93D", "#00C9FF", "#F97316", "#A78BFA"]
 GRADIENT_CMAP = sns.color_palette("blend:#6C63FF,#FF6584", as_cmap=True)
 
@@ -41,7 +43,7 @@ def _save_fig(fig, name: str, output_dir: str):
     fig.savefig(os.path.join(output_dir, f"{name}.png"), dpi=150, bbox_inches="tight",
                 facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close(fig)
-    print(f"   📊 Saved {name}.png")
+    print(f"   [SAVED] {name}.png")
 
 
 def data_quality_report(customers: pd.DataFrame, transactions: pd.DataFrame) -> dict:
@@ -67,10 +69,10 @@ def data_quality_report(customers: pd.DataFrame, transactions: pd.DataFrame) -> 
     # Basic stats
     report["n_customers"] = len(customers)
     report["n_transactions"] = len(transactions)
-    report["date_range"] = f"{transactions['date'].min().date()} → {transactions['date'].max().date()}"
+    report["date_range"] = f"{transactions['date'].min().date()} to {transactions['date'].max().date()}"
     report["avg_txns_per_customer"] = round(len(transactions) / len(customers), 1)
 
-    print("\n📋 Data Quality Report:")
+    print("\n[REPORT] Data Quality Report:")
     for k, v in report.items():
         print(f"   {k}: {v}")
 
@@ -78,7 +80,7 @@ def data_quality_report(customers: pd.DataFrame, transactions: pd.DataFrame) -> 
 
 
 def plot_revenue_distribution(transactions: pd.DataFrame, output_dir: str):
-    """Revenue per customer — distribution on log scale."""
+    """Revenue per customer - distribution on log scale."""
     rev_per_cust = transactions.groupby("customer_id")["amount"].sum()
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -132,7 +134,6 @@ def plot_monthly_revenue_trend(transactions: pd.DataFrame, output_dir: str):
 def plot_correlation_heatmap(features_df: pd.DataFrame, output_dir: str):
     """Correlation heatmap of numerical features."""
     numeric_cols = features_df.select_dtypes(include=[np.number]).columns.tolist()
-    # Drop ID-like columns
     numeric_cols = [c for c in numeric_cols if "id" not in c.lower()]
     corr = features_df[numeric_cols].corr()
 
@@ -147,7 +148,7 @@ def plot_correlation_heatmap(features_df: pd.DataFrame, output_dir: str):
 
 
 def plot_category_mix(transactions: pd.DataFrame, output_dir: str):
-    """Product category distribution — overall and by revenue."""
+    """Product category distribution - overall and by revenue."""
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
     # By count
@@ -281,10 +282,10 @@ def plot_region_revenue(customers: pd.DataFrame, transactions: pd.DataFrame, out
 
 
 def run_eda(customers: pd.DataFrame, transactions: pd.DataFrame,
-            features_df: pd.DataFrame = None, output_dir: str = "outputs/figures"):
+            features_df: pd.DataFrame = None, output_dir: str = "reports/figures"):
     """Run the full EDA pipeline."""
     os.makedirs(output_dir, exist_ok=True)
-    print("\n🔍 Running Exploratory Data Analysis...")
+    print("\n[INFO] Running Exploratory Data Analysis...")
 
     report = data_quality_report(customers, transactions)
     plot_revenue_distribution(transactions, output_dir)
@@ -298,7 +299,7 @@ def run_eda(customers: pd.DataFrame, transactions: pd.DataFrame,
     if features_df is not None:
         plot_correlation_heatmap(features_df, output_dir)
 
-    print(f"\n✅ EDA complete — {len(os.listdir(output_dir))} plots saved to {output_dir}/")
+    print(f"\n[OK] EDA complete - {len(os.listdir(output_dir))} plots saved to {output_dir}/")
     return report
 
 
