@@ -129,5 +129,3 @@ To further evolve this system into an enterprise-grade platform:
 
 ---
 
-## License
-MIT License - free for personal and commercial use.
